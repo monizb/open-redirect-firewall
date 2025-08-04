@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Redirect Firewall - Browser Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #495057;
+        }
+        .test-link:hover {
+            background: #dee2e6;
+        }
+        .blocked {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+        }
+        .allowed {
+            background: #d4edda !important;
+            color: #155724 !important;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Open Redirect Firewall - Browser Example</h1>
+    
+    <div class="container">
+        <h2>Browser Protection Active</h2>
+        <p>This page demonstrates the browser extension functionality. The firewall is actively protecting against open redirects.</p>
+        
+        <div id="status" class="status success">
+            ✅ Browser protection is enabled
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Test Links</h2>
+        <p>Click these links to test the redirect firewall. Safe links will work normally, while malicious ones will be blocked.</p>
+        
+        <h3>✅ Allowed Domains:</h3>
+        <a href="https://example.com/dashboard" class="test-link allowed">https://example.com/dashboard</a>
+        <a href="https://trusted-site.org/profile" class="test-link allowed">https://trusted-site.org/profile</a>
+        <a href="https://myapp.com/settings" class="test-link allowed">https://myapp.com/settings</a>
+        
+        <h3>🚫 Blocked Domains:</h3>
+        <a href="https://malicious-site.com/steal-data" class="test-link blocked">https://malicious-site.com/steal-data</a>
+        <a href="https://phishing-site.com/fake-login" class="test-link blocked">https://phishing-site.com/fake-login</a>
+        <a href="https://evil.com/hack" class="test-link blocked">https://evil.com/hack</a>
+    </div>
+
+    <div class="container">
+        <h2>Manual URL Testing</h2>
+        <input type="text" id="testUrl" placeholder="Enter a URL to test" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button onclick="testUrl()">Test URL</button>
+        <div id="testResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Form Testing</h2>
+        <p>Test form submissions with different action URLs:</p>
+        
+        <form action="https://example.com/submit" method="get" style="margin: 10px 0;">
+            <button type="submit">Safe Form (example.com)</button>
+        </form>
+        
+        <form action="https://malicious-site.com/steal" method="get" style="margin: 10px 0;">
+            <button type="submit">Malicious Form (should be blocked)</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>JavaScript Navigation Testing</h2>
+        <button onclick="safeNavigate()">Safe Navigation (example.com)</button>
+        <button onclick="maliciousNavigate()">Malicious Navigation (should be blocked)</button>
+        <button onclick="testLocationAssign()">Test location.assign()</button>
+        <button onclick="testLocationReplace()">Test location.replace()</button>
+    </div>
+
+    <script type="module">
+        // This would normally be imported from the package
+        // For demo purposes, we'll simulate the behavior
+        
+        const allowedDomains = ['example.com', 'trusted-site.org', 'myapp.com'];
+        
+        function isDomainAllowed(url) {
+            try {
+                const domain = new URL(url).hostname.toLowerCase();
+                return allowedDomains.some(allowed => 
+                    domain === allowed.toLowerCase() || 
+                    domain.endsWith('.' + allowed.toLowerCase())
+                );
+            } catch {
+                return false;
+            }
+        }
+        
+        function showNotification(message) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Open Redirect Firewall', { body: message });
+            }
+            console.warn(`[Open Redirect Firewall] ${message}`);
+        }
+        
+        // Intercept link clicks
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest('a');
+            if (link && link.href) {
+                if (!isDomainAllowed(link.href)) {
+                    event.preventDefault();
+                    showNotification(`Link redirect blocked: ${link.href}`);
+                    document.getElementById('status').innerHTML = '🚫 Redirect blocked: ' + link.href;
+                    document.getElementById('status').className = 'status error';
+                }
+            }
+        });
+        
+        // Intercept form submissions
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (form.action && !isDomainAllowed(form.action)) {
+                event.preventDefault();
+                showNotification(`Form redirect blocked: ${form.action}`);
+                document.getElementById('status').innerHTML = '🚫 Form redirect blocked: ' + form.action;
+                document.getElementById('status').className = 'status error';
+            }
+        });
+        
+        // Intercept location changes
+        const originalAssign = window.location.assign;
+        const originalReplace = window.location.replace;
+        
+        window.location.assign = function(url) {
+            if (isDomainAllowed(url)) {
+                originalAssign.call(this, url);
+            } else {
+                showNotification(`Navigation blocked: ${url}`);
+                document.getElementById('status').innerHTML = '🚫 Navigation blocked: ' + url;
+                document.getElementById('status').className = 'status error';
+            }
+        };
+        
+        window.location.replace = function(url) {
+            if (isDomainAllowed(url)) {
+                originalReplace.call(this, url);
+            } else {
+                showNotification(`Navigation blocked: ${url}`);
+                document.getElementById('status').innerHTML = '🚫 Navigation blocked: ' + url;
+                document.getElementById('status').className = 'status error';
+            }
+        };
+        
+        // Global functions for testing
+        window.testUrl = function() {
+            const url = document.getElementById('testUrl').value;
+            const result = document.getElementById('testResult');
+            
+            if (isDomainAllowed(url)) {
+                result.innerHTML = '<div class="status success">✅ URL is allowed</div>';
+            } else {
+                result.innerHTML = '<div class="status error">🚫 URL is blocked</div>';
+            }
+        };
+        
+        window.safeNavigate = function() {
+            window.location.href = 'https://example.com/dashboard';
+        };
+        
+        window.maliciousNavigate = function() {
+            window.location.href = 'https://malicious-site.com/steal-data';
+        };
+        
+        window.testLocationAssign = function() {
+            window.location.assign('https://malicious-site.com/test');
+        };
+        
+        window.testLocationReplace = function() {
+            window.location.replace('https://malicious-site.com/test');
+        };
+        
+        // Request notification permission
+        if ('Notification' in window) {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html> 

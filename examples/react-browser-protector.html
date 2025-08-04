@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Redirect Firewall - React Browser Protector Example</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #495057;
+        }
+        .test-link:hover {
+            background: #dee2e6;
+        }
+        .blocked {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+        }
+        .allowed {
+            background: #d4edda !important;
+            color: #155724 !important;
+        }
+        .interstitial {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .interstitial-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            text-align: center;
+        }
+        .interstitial-buttons {
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // BrowserRedirectProtector implementation
+        class BrowserRedirectProtector {
+            constructor(firewallConfig, extensionConfig = {}) {
+                this.firewall = new RedirectFirewall(firewallConfig);
+                this.config = {
+                    enabled: true,
+                    showNotifications: true,
+                    logToConsole: true,
+                    showInterstitial: true,
+                    ...extensionConfig
+                };
+                this.isEnabled = true;
+                this.pendingRedirect = null;
+                this.onInterstitialCallback = null;
+                this.init();
+            }
+
+            init() {
+                if (typeof window === 'undefined') return;
+                this.interceptLinkClicks();
+                this.interceptFormSubmissions();
+                this.interceptHistoryAPI();
+            }
+
+            // Safe redirect method since we can't intercept window.location in modern browsers
+            safeRedirect(url) {
+                this.handleRedirect(url, () => {
+                    window.location.href = url;
+                });
+            }
+
+            interceptLinkClicks() {
+                document.addEventListener('click', (event) => {
+                    const link = event.target.closest('a');
+                    if (!link || !this.isEnabled) return;
+
+                    const href = link.getAttribute('href');
+                    if (!href) return;
+
+                    const result = this.firewall.validateRedirect(href);
+                    if (!result.allowed) {
+                        event.preventDefault();
+                        this.handleViolation(href, result.reason || 'Link redirect blocked');
+                    } else if (this.config.showInterstitial) {
+                        event.preventDefault();
+                        this.showInterstitial(href, () => {
+                            window.location.href = href;
+                        });
+                    }
+                }, true);
+            }
+
+            interceptFormSubmissions() {
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+                    if (!form || !this.isEnabled) return;
+
+                    const action = form.getAttribute('action');
+                    if (!action) return;
+
+                    const result = this.firewall.validateRedirect(action);
+                    if (!result.allowed) {
+                        event.preventDefault();
+                        this.handleViolation(action, result.reason || 'Form redirect blocked');
+                    } else if (this.config.showInterstitial) {
+                        event.preventDefault();
+                        this.showInterstitial(action, () => {
+                            form.submit();
+                        });
+                    }
+                }, true);
+            }
+
+            interceptHistoryAPI() {
+                const originalPushState = history.pushState;
+                const originalReplaceState = history.replaceState;
+
+                history.pushState = (state, title, url) => {
+                    if (url && typeof url === 'string' && this.isEnabled) {
+                        const result = this.firewall.validateRedirect(url);
+                        if (!result.allowed) {
+                            this.handleViolation(url, result.reason || 'History navigation blocked');
+                            return;
+                        }
+                    }
+                    originalPushState.call(history, state, title, url);
+                };
+
+                history.replaceState = (state, title, url) => {
+                    if (url && typeof url === 'string' && this.isEnabled) {
+                        const result = this.firewall.validateRedirect(url);
+                        if (!result.allowed) {
+                            this.handleViolation(url, result.reason || 'History navigation blocked');
+                            return;
+                        }
+                    }
+                    originalReplaceState.call(history, state, title, url);
+                };
+            }
+
+            handleRedirect(url, callback) {
+                const result = this.firewall.validateRedirect(url);
+                if (result.allowed) {
+                    if (this.config.showInterstitial) {
+                        this.showInterstitial(url, callback);
+                    } else {
+                        callback();
+                    }
+                } else {
+                    this.handleViolation(url, result.reason || 'Unknown violation');
+                }
+            }
+
+            showInterstitial(url, callback) {
+                this.pendingRedirect = { url, callback };
+                if (this.onInterstitialCallback) {
+                    this.onInterstitialCallback(url);
+                }
+            }
+
+            confirmRedirect() {
+                if (this.pendingRedirect) {
+                    this.pendingRedirect.callback();
+                    this.pendingRedirect = null;
+                }
+            }
+
+            cancelRedirect() {
+                this.pendingRedirect = null;
+            }
+
+            handleViolation(url, reason) {
+                if (this.config.logToConsole) {
+                    console.warn(`[Open Redirect Firewall] Blocked: ${reason} - URL: ${url}`);
+                }
+
+                if (this.config.showNotifications) {
+                    this.showNotification(`Redirect blocked: ${reason}`);
+                }
+            }
+
+            showNotification(message) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Open Redirect Firewall', { body: message });
+                }
+            }
+
+            enable() {
+                this.isEnabled = true;
+            }
+
+            disable() {
+                this.isEnabled = false;
+            }
+
+            updateConfig(newConfig) {
+                this.firewall.updateConfig(newConfig);
+            }
+
+            updateExtensionConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+            }
+
+            validateUrl(url) {
+                return this.firewall.validateRedirect(url);
+            }
+
+            getViolations() {
+                return this.firewall.getViolations();
+            }
+
+            setInterstitialCallback(callback) {
+                this.onInterstitialCallback = callback;
+            }
+        }
+
+        // RedirectFirewall implementation
+        class RedirectFirewall {
+            constructor(config) {
+                this.config = {
+                    allowedSubdomains: false,
+                    allowLocalhost: false,
+                    allowRelativeUrls: true,
+                    strictMode: false,
+                    logViolations: true,
+                    ...config
+                };
+                this.violations = [];
+            }
+
+            validateRedirect(url) {
+                if (!url || typeof url !== 'string') {
+                    return this.createResult(false, 'Invalid URL provided');
+                }
+
+                try {
+                    const parsedUrl = new URL(url);
+                    
+                    if (this.isRelativeUrl(parsedUrl)) {
+                        return this.config.allowRelativeUrls 
+                            ? this.createResult(true)
+                            : this.createResult(false, 'Relative URLs not allowed');
+                    }
+
+                    if (this.isLocalhost(parsedUrl)) {
+                        return this.config.allowLocalhost 
+                            ? this.createResult(true)
+                            : this.createResult(false, 'Localhost not allowed');
+                    }
+
+                    const domain = parsedUrl.hostname;
+                    if (!domain) {
+                        return this.createResult(false, 'No domain found in URL');
+                    }
+
+                    const isAllowed = this.isDomainAllowed(domain);
+                    if (!isAllowed) {
+                        this.logViolation(url, `Domain ${domain} not in whitelist`);
+                        return this.createResult(false, `Domain ${domain} not allowed`);
+                    }
+
+                    return this.createResult(true, undefined, this.sanitizeUrl(url));
+                } catch (error) {
+                    return this.createResult(false, 'Invalid URL format');
+                }
+            }
+
+            isRelativeUrl(parsedUrl) {
+                return !parsedUrl.protocol || parsedUrl.protocol === '';
+            }
+
+            isLocalhost(parsedUrl) {
+                const hostname = parsedUrl.hostname.toLowerCase();
+                return hostname === 'localhost' || 
+                       hostname === '127.0.0.1' || 
+                       hostname.startsWith('192.168.') ||
+                       hostname.startsWith('10.') ||
+                       hostname.startsWith('172.');
+            }
+
+            isDomainAllowed(domain) {
+                const normalizedDomain = domain.toLowerCase();
+                
+                for (const allowedDomain of this.config.allowedDomains) {
+                    const normalizedAllowed = allowedDomain.toLowerCase();
+                    
+                    if (normalizedDomain === normalizedAllowed) {
+                        return true;
+                    }
+                    
+                    if (this.config.allowedSubdomains && normalizedDomain.endsWith('.' + normalizedAllowed)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+
+            sanitizeUrl(url) {
+                if (this.config.strictMode) {
+                    const parsed = new URL(url);
+                    return `${parsed.protocol}//${parsed.hostname}${parsed.pathname}${parsed.search}`;
+                }
+                return url;
+            }
+
+            createResult(allowed, reason, sanitizedUrl) {
+                return {
+                    allowed,
+                    reason,
+                    sanitizedUrl: sanitizedUrl || (allowed ? undefined : undefined)
+                };
+            }
+
+            logViolation(originalUrl, reason) {
+                if (!this.config.logViolations) return;
+
+                const violation = {
+                    timestamp: new Date(),
+                    originalUrl,
+                    reason
+                };
+
+                this.violations.push(violation);
+                
+                if (this.config.logViolations) {
+                    console.warn(`[Open Redirect Firewall] Violation: ${reason} - URL: ${originalUrl}`);
+                }
+            }
+
+            getViolations() {
+                return [...this.violations];
+            }
+
+            clearViolations() {
+                this.violations = [];
+            }
+
+            updateConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+            }
+
+            getAllowedDomains() {
+                return [...this.config.allowedDomains];
+            }
+        }
+
+        // React App Component
+        function App() {
+            const [status, setStatus] = useState('✅ Browser protection is enabled');
+            const [showInterstitial, setShowInterstitial] = useState(false);
+            const [pendingUrl, setPendingUrl] = useState('');
+            const [protector, setProtector] = useState(null);
+            const [interstitialEnabled, setInterstitialEnabled] = useState(true);
+
+            useEffect(() => {
+                // Initialize the browser protector
+                const newProtector = new BrowserRedirectProtector({
+                    allowedDomains: ['example.com', 'trusted-site.org', 'myapp.com'],
+                    allowedSubdomains: true,
+                    allowLocalhost: true,
+                    logViolations: true
+                }, {
+                    enabled: true,
+                    showNotifications: true,
+                    logToConsole: true,
+                    showInterstitial: interstitialEnabled
+                });
+
+                // Set up interstitial callback
+                newProtector.setInterstitialCallback((url) => {
+                    setPendingUrl(url);
+                    setShowInterstitial(true);
+                });
+
+                setProtector(newProtector);
+
+                // Request notification permission
+                if ('Notification' in window) {
+                    Notification.requestPermission();
+                }
+
+                return () => {
+                    // Cleanup if needed
+                };
+            }, [interstitialEnabled]);
+
+            const handleConfirmRedirect = () => {
+                if (protector) {
+                    protector.confirmRedirect();
+                }
+                setShowInterstitial(false);
+                setPendingUrl('');
+            };
+
+            const handleCancelRedirect = () => {
+                if (protector) {
+                    protector.cancelRedirect();
+                }
+                setShowInterstitial(false);
+                setPendingUrl('');
+            };
+
+            const toggleInterstitial = () => {
+                setInterstitialEnabled(!interstitialEnabled);
+                if (protector) {
+                    protector.updateExtensionConfig({ showInterstitial: !interstitialEnabled });
+                }
+            };
+
+            const testUrl = (url) => {
+                if (protector) {
+                    const result = protector.validateUrl(url);
+                    if (result.allowed) {
+                        setStatus(`✅ URL is allowed: ${url}`);
+                    } else {
+                        setStatus(`❌ URL is blocked: ${result.reason}`);
+                    }
+                }
+            };
+
+            const testProgrammaticRedirect = (url) => {
+                setStatus(`🔄 Attempting programmatic redirect to: ${url}`);
+                setTimeout(() => {
+                    if (protector) {
+                        protector.safeRedirect(url);
+                    } else {
+                        window.location.href = url;
+                    }
+                }, 1000);
+            };
+
+            return (
+                <div>
+                    <h1>Open Redirect Firewall - React Browser Protector Example</h1>
+                    
+                    <div className="container">
+                        <h2>Browser Protection Active</h2>
+                        <p>This page demonstrates the browser extension functionality. The firewall is actively protecting against open redirects.</p>
+                        
+                        <div className={`status ${status.includes('✅') ? 'success' : status.includes('❌') ? 'error' : 'info'}`}>
+                            {status}
+                        </div>
+
+                        <div style={{ marginTop: '20px' }}>
+                            <label>
+                                <input 
+                                    type="checkbox" 
+                                    checked={interstitialEnabled} 
+                                    onChange={toggleInterstitial}
+                                />
+                                Show interstitial confirmation before redirects
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="container">
+                        <h2>Test Links</h2>
+                        <p>Click these links to test the redirect firewall. Safe links will work normally, while malicious ones will be blocked.</p>
+                        
+                        <h3>✅ Allowed Domains:</h3>
+                        <a href="https://example.com/dashboard" className="test-link allowed">https://example.com/dashboard</a>
+                        <a href="https://trusted-site.org/profile" className="test-link allowed">https://trusted-site.org/profile</a>
+                        <a href="https://myapp.com/settings" className="test-link allowed">https://myapp.com/settings</a>
+                        
+                        <h3>🚫 Blocked Domains:</h3>
+                        <a href="https://malicious-site.com/steal-data" className="test-link blocked">https://malicious-site.com/steal-data</a>
+                        <a href="https://phishing-site.com/fake-login" className="test-link blocked">https://phishing-site.com/fake-login</a>
+                        <a href="https://evil.com/hack" className="test-link blocked">https://evil.com/hack</a>
+                    </div>
+
+                    <div className="container">
+                        <h2>Programmatic Redirect Testing</h2>
+                        <p>Test programmatic redirects (these will trigger the interstitial if enabled):</p>
+                        
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => testProgrammaticRedirect('https://example.com/dashboard')}
+                            style={{ margin: '5px' }}
+                        >
+                            Safe Redirect (example.com)
+                        </button>
+                        
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => testProgrammaticRedirect('https://trusted-site.org/profile')}
+                            style={{ margin: '5px' }}
+                        >
+                            Safe Redirect (trusted-site.org)
+                        </button>
+                        
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={() => testProgrammaticRedirect('https://malicious-site.com/steal-data')}
+                            style={{ margin: '5px' }}
+                        >
+                            Malicious Redirect (should be blocked)
+                        </button>
+                    </div>
+
+                    <div className="container">
+                        <h2>Manual URL Testing</h2>
+                        <input 
+                            type="text" 
+                            placeholder="Enter a URL to test" 
+                            style={{ width: '100%', padding: '8px', margin: '10px 0' }}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    testUrl(e.target.value);
+                                }
+                            }}
+                        />
+                    </div>
+
+                    <div className="container">
+                        <h2>Form Testing</h2>
+                        <p>Test form submissions with different action URLs:</p>
+                        
+                        <form action="https://example.com/submit" method="get" style={{ margin: '10px 0' }}>
+                            <button type="submit" className="btn btn-primary">Safe Form (example.com)</button>
+                        </form>
+                        
+                        <form action="https://malicious-site.com/steal" method="get" style={{ margin: '10px 0' }}>
+                            <button type="submit" className="btn btn-secondary">Malicious Form (should be blocked)</button>
+                        </form>
+                    </div>
+
+                    {/* Interstitial Modal */}
+                    {showInterstitial && (
+                        <div className="interstitial">
+                            <div className="interstitial-content">
+                                <h2>⚠️ Confirm Redirect</h2>
+                                <p>You are about to leave this site and navigate to:</p>
+                                <p><strong>{pendingUrl}</strong></p>
+                                <p>Are you sure you want to continue?</p>
+                                
+                                <div className="interstitial-buttons">
+                                    <button 
+                                        className="btn btn-primary" 
+                                        onClick={handleConfirmRedirect}
+                                    >
+                                        Continue to Site
+                                    </button>
+                                    <button 
+                                        className="btn btn-secondary" 
+                                        onClick={handleCancelRedirect}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Render the app using React 18 createRoot
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html> 
