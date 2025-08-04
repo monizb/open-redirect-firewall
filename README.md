@@ -272,6 +272,83 @@ const protector = createBrowserProtector({
 });
 ```
 
+### Custom Interstitial with Themes and Styling
+
+The package provides a structured way to customize interstitial pages with your own themes, colors, and content:
+
+```typescript
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com']
+}, {
+  showInterstitial: true,
+  customInterstitial: {
+    theme: {
+      // Colors
+      primaryColor: '#e74c3c',        // Main brand color
+      secondaryColor: '#95a5a6',      // Secondary color
+      successColor: '#27ae60',        // Success/confirm color
+      backgroundColor: '#2c3e50',     // Background color
+      surfaceColor: '#34495e',        // Surface/card color
+      textColor: '#ecf0f1',           // Text color
+      
+      // Typography
+      fontFamily: '"Segoe UI", sans-serif',
+      fontSize: '16px',
+      headingFontSize: '24px',
+      
+      // Spacing & Layout
+      borderRadius: '12px',
+      padding: '20px',
+      spacing: '16px',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+    },
+    content: {
+      title: 'External Link Warning',
+      description: 'You are about to leave our secure site.',
+      urlDisplay: 'Destination:',
+      warningText: 'This external site is not under our control.',
+      confirmButtonText: 'Proceed',
+      cancelButtonText: 'Go Back',
+      footerText: 'For security questions, contact support.'
+    },
+    type: 'popup' // or 'fullpage'
+  }
+});
+```
+
+### Custom HTML Templates
+
+For complete control, you can provide your own HTML template:
+
+```typescript
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com']
+}, {
+  showInterstitial: true,
+  customInterstitial: {
+    content: {
+      customHTML: `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    display: flex; justify-content: center; align-items: center; z-index: 1000;">
+          <div style="background: white; padding: 40px; border-radius: 20px; text-align: center;">
+            <h2>External Link Detected</h2>
+            <p>You're about to visit: <strong>{{URL}}</strong></p>
+            <button onclick="{{CONFIRM_CALLBACK}}" style="background: #27ae60; color: white; padding: 12px 30px; border: none; border-radius: 25px; margin-right: 10px;">Continue</button>
+            <button onclick="{{CANCEL_CALLBACK}}" style="background: #e74c3c; color: white; padding: 12px 30px; border: none; border-radius: 25px;">Cancel</button>
+          </div>
+        </div>
+      `
+    }
+  }
+});
+```
+
+**Available placeholders:**
+- `{{URL}}` - The destination URL
+- `{{CONFIRM_CALLBACK}}` - Continue button action
+- `{{CANCEL_CALLBACK}}` - Cancel button action
+
 ### Express Interstitial
 
 ```typescript
@@ -291,6 +368,135 @@ const redirectFirewall = createRedirectFirewallMiddleware({
     `);
   }
 });
+```
+
+## 📚 Examples
+
+### Quick Start Examples
+
+**Basic Protection:**
+```bash
+npm install open-redirect-firewall
+```
+
+```javascript
+const { createBrowserProtector } = require('open-redirect-firewall');
+
+// One-line setup - protects all redirects automatically
+createBrowserProtector({
+  allowedDomains: ['example.com', 'trusted-site.org', 'myapp.com']
+});
+```
+
+**With Interstitial Confirmation:**
+```javascript
+const { createBrowserProtector } = require('open-redirect-firewall');
+
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com']
+}, {
+  showInterstitial: true,
+  onInterstitial: (url, callback) => {
+    if (confirm(`Are you sure you want to visit ${url}?`)) {
+      callback();
+    }
+  }
+});
+```
+
+### Advanced Examples
+
+**Corporate Branding Theme:**
+```javascript
+const { createBrowserProtector } = require('open-redirect-firewall');
+
+const protector = createBrowserProtector({
+  allowedDomains: ['company.com', 'partner.com']
+}, {
+  showInterstitial: true,
+  customInterstitial: {
+    theme: {
+      primaryColor: '#1e3a8a',      // Corporate blue
+      secondaryColor: '#64748b',
+      successColor: '#059669',
+      backgroundColor: '#f1f5f9',
+      surfaceColor: '#ffffff',
+      textColor: '#1e293b',
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+    },
+    content: {
+      title: 'External Link Notice',
+      description: 'You are leaving our corporate network.',
+      urlDisplay: 'External destination:',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Cancel'
+    },
+    type: 'popup'
+  }
+});
+```
+
+**Trust All Domains with Custom Theme:**
+```javascript
+const { createBrowserProtector } = require('open-redirect-firewall');
+
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com']
+}, {
+  trustAllDomains: true,           // Trust all domains but show interstitial
+  showInterstitial: true,
+  customInterstitial: {
+    theme: {
+      primaryColor: '#ff6b35',     // Orange theme
+      backgroundColor: '#fff8e1',
+      borderRadius: '16px'
+    },
+    content: {
+      title: 'Link Confirmation',
+      description: 'Please confirm you want to visit this link.',
+      confirmButtonText: 'Yes, go there!',
+      cancelButtonText: 'No, stay here'
+    },
+    type: 'fullpage'
+  }
+});
+```
+
+### Complete Example Files
+
+See the `examples/` directory for complete working examples:
+
+- **`examples/basic-usage.js`** - Basic firewall usage
+- **`examples/express-example.js`** - Express middleware integration
+- **`examples/react-example.tsx`** - React hooks usage
+- **`examples/browser-example.html`** - Vanilla JS browser protection
+- **`examples/trust-all-domains-example.js`** - Trust all domains feature
+- **`examples/custom-interstitial-examples.js`** - Custom themes and styling
+- **`examples/express-interstitial-example.js`** - Express with interstitial
+- **`examples/react-browser-protector.html`** - React + browser protector
+- **`examples/advanced-browser-protector.html`** - Advanced features demo
+- **`examples/simple-browser-protector.html`** - Simple working demo
+
+### Testing Examples
+
+**Run Node.js examples:**
+```bash
+node examples/basic-usage.js
+node examples/trust-all-domains-example.js
+node examples/custom-interstitial-examples.js
+```
+
+**Open HTML examples in browser:**
+```bash
+open examples/browser-example.html
+open examples/advanced-browser-protector.html
+open examples/simple-browser-protector.html
+```
+
+**Test Express examples:**
+```bash
+node examples/express-example.js
+node examples/express-interstitial-example.js
 ```
 
 ## 📊 Monitoring and Logging

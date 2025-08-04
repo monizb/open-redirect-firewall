@@ -1,5 +1,6 @@
 import { RedirectFirewall } from '../core/firewall';
 import { RedirectFirewallConfig, BrowserExtensionConfig } from '../types';
+import { InterstitialGenerator } from '../utils/interstitial-generator';
 
 export class BrowserRedirectProtector {
   private firewall: RedirectFirewall;
@@ -48,6 +49,23 @@ export class BrowserRedirectProtector {
   private showInterstitial(url: string, callback: () => void): void {
     this.pendingRedirect = { url, callback };
     
+    // Check if custom interstitial is configured
+    if (this.config.customInterstitial) {
+      const html = InterstitialGenerator.generateInterstitial(
+        url,
+        this.config.customInterstitial,
+        () => this.confirmRedirect(),
+        () => this.cancelRedirect()
+      );
+      
+      // Create and append the interstitial
+      const interstitialElement = document.createElement('div');
+      interstitialElement.innerHTML = html;
+      interstitialElement.id = 'orf-interstitial';
+      document.body.appendChild(interstitialElement);
+      return;
+    }
+    
     // Check if full page interstitial is enabled
     if (this.config.fullPageInterstitial && this.config.onFullPageInterstitial) {
       this.config.onFullPageInterstitial(url, callback);
@@ -61,10 +79,19 @@ export class BrowserRedirectProtector {
       this.pendingRedirect.callback();
       this.pendingRedirect = null;
     }
+    this.removeInterstitial();
   }
 
   public cancelRedirect(): void {
     this.pendingRedirect = null;
+    this.removeInterstitial();
+  }
+
+  private removeInterstitial(): void {
+    const interstitial = document.getElementById('orf-interstitial');
+    if (interstitial) {
+      interstitial.remove();
+    }
   }
 
   private interceptLinkClicks(): void {
