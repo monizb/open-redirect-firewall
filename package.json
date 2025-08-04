@@ -1,6 +1,6 @@
 {
-  "name": "open-redirect-firewall",
-  "version": "1.0.0",
+  "name": "@monizb/open-redirect-firewall",
+  "version": "1.0.1",
   "description": "A security package that prevents open redirect vulnerabilities by whitelisting allowed domains",
   "main": "dist/core.js",
   "types": "dist/core.d.ts",
@@ -28,12 +28,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/open-redirect-firewall.git"
+    "url": "git+https://github.com/monizb/open-redirect-firewall.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/open-redirect-firewall/issues"
+    "url": "https://github.com/monizb/open-redirect-firewall/issues"
   },
-  "homepage": "https://github.com/yourusername/open-redirect-firewall#readme",
+  "homepage": "https://github.com/monizb/open-redirect-firewall#readme",
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/jest": "^29.5.0",
@@ -67,5 +67,8 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "directories": {
+    "example": "examples"
   }
 }
