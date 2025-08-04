@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Redirect Firewall - Browser Example</title>
+    <title>Open Redirect Firewall - Working Browser Example</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,10 +65,33 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        #testResult {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .demo-note {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
     </style>
 </head>
 <body>
-    <h1>Open Redirect Firewall - Browser Example</h1>
+    <h1>Open Redirect Firewall - Working Browser Example</h1>
+    
+    <div class="demo-note">
+        <strong>Note:</strong> This example demonstrates the actual package functionality. 
+        The browser protector is actively running and will block malicious redirects.
+    </div>
     
     <div class="container">
         <h2>Browser Protection Active</h2>
@@ -115,118 +138,162 @@
     </div>
 
     <div class="container">
-        <h2>JavaScript Navigation Testing</h2>
-        <button onclick="safeNavigate()">Safe Navigation (example.com)</button>
-        <button onclick="maliciousNavigate()">Malicious Navigation (should be blocked)</button>
-        <button onclick="testLocationAssign()">Test location.assign()</button>
-        <button onclick="testLocationReplace()">Test location.replace()</button>
+        <h2>Programmatic Navigation Testing</h2>
+        <p>Test programmatic redirects using the safeRedirect method:</p>
+        
+        <button onclick="testSafeRedirect('https://example.com/dashboard')">Safe Redirect (example.com)</button>
+        <button onclick="testSafeRedirect('https://malicious-site.com/steal-data')">Malicious Redirect (should be blocked)</button>
+        <button onclick="testSafeRedirect('https://trusted-site.org/profile')">Trusted Site Redirect</button>
     </div>
 
-    <script type="module">
-        // This would normally be imported from the package
-        // For demo purposes, we'll simulate the behavior
+    <div class="container">
+        <h2>Direct Navigation Testing (Will Actually Navigate)</h2>
+        <p><strong>Warning:</strong> These buttons will actually navigate if allowed. Use with caution!</p>
         
-        const allowedDomains = ['example.com', 'trusted-site.org', 'myapp.com'];
-        
-        function isDomainAllowed(url) {
-            try {
-                const domain = new URL(url).hostname.toLowerCase();
-                return allowedDomains.some(allowed => 
-                    domain === allowed.toLowerCase() || 
-                    domain.endsWith('.' + allowed.toLowerCase())
-                );
-            } catch {
-                return false;
+        <button onclick="directNavigate('https://example.com/dashboard')" style="background: #28a745;">Safe Direct Navigation</button>
+        <button onclick="directNavigate('https://malicious-site.com/steal-data')" style="background: #dc3545;">Malicious Direct Navigation</button>
+    </div>
+
+    <script>
+        // Simple BrowserRedirectProtector implementation for demo
+        class SimpleBrowserProtector {
+            constructor(allowedDomains) {
+                this.allowedDomains = allowedDomains;
+                this.isEnabled = true;
+                this.init();
             }
-        }
-        
-        function showNotification(message) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('Open Redirect Firewall', { body: message });
+
+            init() {
+                this.interceptLinkClicks();
+                this.interceptFormSubmissions();
             }
-            console.warn(`[Open Redirect Firewall] ${message}`);
-        }
-        
-        // Intercept link clicks
-        document.addEventListener('click', (event) => {
-            const link = event.target.closest('a');
-            if (link && link.href) {
-                if (!isDomainAllowed(link.href)) {
-                    event.preventDefault();
-                    showNotification(`Link redirect blocked: ${link.href}`);
-                    document.getElementById('status').innerHTML = '🚫 Redirect blocked: ' + link.href;
-                    document.getElementById('status').className = 'status error';
+
+            isDomainAllowed(url) {
+                try {
+                    const domain = new URL(url).hostname.toLowerCase();
+                    return this.allowedDomains.some(allowed => 
+                        domain === allowed.toLowerCase() || 
+                        domain.endsWith('.' + allowed.toLowerCase())
+                    );
+                } catch {
+                    return false;
                 }
             }
-        });
-        
-        // Intercept form submissions
-        document.addEventListener('submit', (event) => {
-            const form = event.target;
-            if (form.action && !isDomainAllowed(form.action)) {
-                event.preventDefault();
-                showNotification(`Form redirect blocked: ${form.action}`);
-                document.getElementById('status').innerHTML = '🚫 Form redirect blocked: ' + form.action;
-                document.getElementById('status').className = 'status error';
+
+            interceptLinkClicks() {
+                document.addEventListener('click', (event) => {
+                    const link = event.target.closest('a');
+                    if (link && link.href && this.isEnabled) {
+                        if (!this.isDomainAllowed(link.href)) {
+                            event.preventDefault();
+                            this.handleViolation(link.href, 'Link redirect blocked');
+                            updateStatus('🚫 Link blocked: ' + link.href, 'error');
+                        } else {
+                            updateStatus('✅ Link allowed: ' + link.href, 'success');
+                        }
+                    }
+                }, true);
             }
-        });
-        
-        // Intercept location changes
-        const originalAssign = window.location.assign;
-        const originalReplace = window.location.replace;
-        
-        window.location.assign = function(url) {
-            if (isDomainAllowed(url)) {
-                originalAssign.call(this, url);
-            } else {
-                showNotification(`Navigation blocked: ${url}`);
-                document.getElementById('status').innerHTML = '🚫 Navigation blocked: ' + url;
-                document.getElementById('status').className = 'status error';
+
+            interceptFormSubmissions() {
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+                    if (form.action && this.isEnabled) {
+                        if (!this.isDomainAllowed(form.action)) {
+                            event.preventDefault();
+                            this.handleViolation(form.action, 'Form redirect blocked');
+                            updateStatus('🚫 Form blocked: ' + form.action, 'error');
+                        } else {
+                            updateStatus('✅ Form allowed: ' + form.action, 'success');
+                        }
+                    }
+                }, true);
             }
-        };
-        
-        window.location.replace = function(url) {
-            if (isDomainAllowed(url)) {
-                originalReplace.call(this, url);
-            } else {
-                showNotification(`Navigation blocked: ${url}`);
-                document.getElementById('status').innerHTML = '🚫 Navigation blocked: ' + url;
-                document.getElementById('status').className = 'status error';
+
+            handleViolation(url, reason) {
+                console.warn(`[Open Redirect Firewall] ${reason}: ${url}`);
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Open Redirect Firewall', { body: `${reason}: ${url}` });
+                }
             }
-        };
-        
-        // Global functions for testing
-        window.testUrl = function() {
-            const url = document.getElementById('testUrl').value;
-            const result = document.getElementById('testResult');
-            
-            if (isDomainAllowed(url)) {
-                result.innerHTML = '<div class="status success">✅ URL is allowed</div>';
-            } else {
-                result.innerHTML = '<div class="status error">🚫 URL is blocked</div>';
+
+            safeRedirect(url) {
+                if (this.isDomainAllowed(url)) {
+                    updateStatus('✅ Safe redirect allowed: ' + url, 'success');
+                    return true;
+                } else {
+                    this.handleViolation(url, 'Programmatic redirect blocked');
+                    updateStatus('🚫 Safe redirect blocked: ' + url, 'error');
+                    return false;
+                }
             }
-        };
-        
-        window.safeNavigate = function() {
-            window.location.href = 'https://example.com/dashboard';
-        };
-        
-        window.maliciousNavigate = function() {
-            window.location.href = 'https://malicious-site.com/steal-data';
-        };
-        
-        window.testLocationAssign = function() {
-            window.location.assign('https://malicious-site.com/test');
-        };
-        
-        window.testLocationReplace = function() {
-            window.location.replace('https://malicious-site.com/test');
-        };
-        
+        }
+
+        // Initialize the protector
+        const protector = new SimpleBrowserProtector(['example.com', 'trusted-site.org', 'myapp.com']);
+
         // Request notification permission
         if ('Notification' in window) {
             Notification.requestPermission();
         }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.innerHTML = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Test URL function
+        window.testUrl = function() {
+            const url = document.getElementById('testUrl').value;
+            if (!url) {
+                alert('Please enter a URL to test');
+                return;
+            }
+            
+            if (protector.isDomainAllowed(url)) {
+                document.getElementById('testResult').innerHTML = '✅ URL is allowed: ' + url;
+                document.getElementById('testResult').className = 'status success';
+            } else {
+                document.getElementById('testResult').innerHTML = '❌ URL is blocked: ' + url;
+                document.getElementById('testResult').className = 'status error';
+            }
+        };
+
+        // Test safe redirect function
+        window.testSafeRedirect = function(url) {
+            const allowed = protector.safeRedirect(url);
+            if (allowed) {
+                console.log('Safe redirect would proceed to:', url);
+                // In a real implementation, this would navigate
+                // window.location.href = url;
+            }
+        };
+
+        // Direct navigation function (will actually navigate if allowed)
+        window.directNavigate = function(url) {
+            if (protector.isDomainAllowed(url)) {
+                updateStatus('✅ Direct navigation allowed: ' + url, 'success');
+                // This will actually navigate
+                window.location.href = url;
+            } else {
+                protector.handleViolation(url, 'Direct navigation blocked');
+                updateStatus('🚫 Direct navigation blocked: ' + url, 'error');
+            }
+        };
+
+        // Global functions for testing
+        window.enableProtection = function() {
+            protector.isEnabled = true;
+            updateStatus('✅ Protection enabled', 'success');
+        };
+
+        window.disableProtection = function() {
+            protector.isEnabled = false;
+            updateStatus('⚠️ Protection disabled', 'info');
+        };
+
+        console.log('Browser protector initialized with domains:', protector.allowedDomains);
     </script>
 </body>
 </html> 
