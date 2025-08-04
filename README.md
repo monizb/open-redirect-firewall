@@ -74,9 +74,9 @@ const firewall = new RedirectFirewall({
 const result = firewall.validateRedirect('https://example.com/dashboard');
 console.log(result.allowed); // true
 
-const maliciousResult = firewall.validateRedirect('https://malicious-site.com/steal-data');
+const maliciousResult = firewall.validateRedirect('https://some-random-malicious-site.com/steal-data');
 console.log(maliciousResult.allowed); // false
-console.log(maliciousResult.reason); // "Domain malicious-site.com not allowed"
+console.log(maliciousResult.reason); // "Domain some-random-malicious-site.com not allowed"
 ```
 
 ## 🔧 Express Middleware
@@ -510,7 +510,7 @@ const firewall = new RedirectFirewall({
 });
 
 // Validate some URLs
-firewall.validateRedirect('https://malicious-site.com');
+firewall.validateRedirect('https://some-random-malicious-site.com');
 firewall.validateRedirect('https://phishing-site.com');
 
 // Get violation history
@@ -519,8 +519,8 @@ console.log(violations);
 // [
 //   {
 //     timestamp: Date,
-//     originalUrl: 'https://malicious-site.com',
-//     reason: 'Domain malicious-site.com not in whitelist'
+//     originalUrl: 'https://some-random-malicious-site.com',
+//     reason: 'Domain some-random-malicious-site.com not in whitelist'
 //   },
 //   ...
 // ]

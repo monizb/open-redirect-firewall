@@ -13,7 +13,7 @@ const firewall = new RedirectFirewall({
 // Test some URLs
 const testUrls = [
   'https://example.com/dashboard',
-  'https://malicious-site.com/steal-data',
+  'https://some-random-malicious-site.com/steal-data',
   'https://trusted-site.org/profile',
   'https://sub.example.com/api',
   'http://localhost:3000',

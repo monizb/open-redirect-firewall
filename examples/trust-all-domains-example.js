@@ -25,7 +25,7 @@ const trustAllProtector = createBrowserProtector({
 // Test with various URLs
 const testUrls = [
   'https://example.com/dashboard',
-  'https://malicious-site.com/steal-data',
+  'https://some-random-malicious-site.com/steal-data',
   'https://trusted-site.org/profile',
   'https://evil.com/hack'
 ];

@@ -38,7 +38,7 @@ function LoginComponent() {
 
   const testUrls = [
     'https://example.com/dashboard',
-    'https://malicious-site.com/steal-data',
+    'https://some-random-malicious-site.com/steal-data',
     'https://trusted-site.org/profile',
     'https://phishing-site.com/fake-login'
   ];

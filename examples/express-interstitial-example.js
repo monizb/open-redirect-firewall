@@ -75,7 +75,7 @@ app.get('/auth/login', (req, res) => {
       <p>Try these URLs to test the redirect firewall with interstitial:</p>
       <ul>
         <li><a href="/auth/login?redirect=https://example.com/dashboard">Valid redirect (will show interstitial)</a></li>
-        <li><a href="/auth/login?redirect=https://malicious-site.com/steal-data">Invalid redirect (should be blocked)</a></li>
+        <li><a href="/auth/login?redirect=https://some-random-malicious-site.com/steal-data">Invalid redirect (should be blocked)</a></li>
         <li><a href="/auth/login?redirect=https://trusted-site.org/profile">Another valid redirect</a></li>
       </ul>
       <p><a href="/dashboard">Go to Dashboard</a></p>

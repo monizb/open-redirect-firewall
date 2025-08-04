@@ -580,7 +580,7 @@
                         <a href="https://myapp.com/settings" className="test-link">https://myapp.com/settings</a>
                         
                         <h3>🚫 Blocked Domains (unless Trust All is enabled):</h3>
-                        <a href="https://malicious-site.com/steal-data" className="test-link">https://malicious-site.com/steal-data</a>
+                        <a href="https://some-random-malicious-site.com/steal-data" className="test-link">https://some-random-malicious-site.com/steal-data</a>
                         <a href="https://phishing-site.com/fake-login" className="test-link">https://phishing-site.com/fake-login</a>
                         <a href="https://evil.com/hack" className="test-link">https://evil.com/hack</a>
                     </div>
@@ -598,7 +598,7 @@
                         
                         <button 
                             className="btn btn-secondary" 
-                            onClick={() => testProgrammaticRedirect('https://malicious-site.com/steal-data')}
+                            onClick={() => testProgrammaticRedirect('https://some-random-malicious-site.com/steal-data')}
                         >
                             Malicious Redirect (test with Trust All)
                         </button>

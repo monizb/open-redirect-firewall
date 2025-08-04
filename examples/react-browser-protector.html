@@ -536,7 +536,7 @@
                         <a href="https://myapp.com/settings" className="test-link allowed">https://myapp.com/settings</a>
                         
                         <h3>🚫 Blocked Domains:</h3>
-                        <a href="https://malicious-site.com/steal-data" className="test-link blocked">https://malicious-site.com/steal-data</a>
+                        <a href="https://some-random-malicious-site.com/steal-data" className="test-link blocked">https://some-random-malicious-site.com/steal-data</a>
                         <a href="https://phishing-site.com/fake-login" className="test-link blocked">https://phishing-site.com/fake-login</a>
                         <a href="https://evil.com/hack" className="test-link blocked">https://evil.com/hack</a>
                     </div>
@@ -563,7 +563,7 @@
                         
                         <button 
                             className="btn btn-secondary" 
-                            onClick={() => testProgrammaticRedirect('https://malicious-site.com/steal-data')}
+                            onClick={() => testProgrammaticRedirect('https://some-random-malicious-site.com/steal-data')}
                             style={{ margin: '5px' }}
                         >
                             Malicious Redirect (should be blocked)
@@ -592,7 +592,7 @@
                             <button type="submit" className="btn btn-primary">Safe Form (example.com)</button>
                         </form>
                         
-                        <form action="https://malicious-site.com/steal" method="get" style={{ margin: '10px 0' }}>
+                        <form action="https://some-random-malicious-site.com/steal" method="get" style={{ margin: '10px 0' }}>
                             <button type="submit" className="btn btn-secondary">Malicious Form (should be blocked)</button>
                         </form>
                     </div>

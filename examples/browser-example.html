@@ -112,7 +112,7 @@
         <a href="https://myapp.com/settings" class="test-link allowed">https://myapp.com/settings</a>
         
         <h3>🚫 Blocked Domains:</h3>
-        <a href="https://malicious-site.com/steal-data" class="test-link blocked">https://malicious-site.com/steal-data</a>
+        <a href="https://some-random-malicious-site.com/steal-data" class="test-link blocked">https://some-random-malicious-site.com/steal-data</a>
         <a href="https://phishing-site.com/fake-login" class="test-link blocked">https://phishing-site.com/fake-login</a>
         <a href="https://evil.com/hack" class="test-link blocked">https://evil.com/hack</a>
     </div>
@@ -132,7 +132,7 @@
             <button type="submit">Safe Form (example.com)</button>
         </form>
         
-        <form action="https://malicious-site.com/steal" method="get" style="margin: 10px 0;">
+        <form action="https://some-random-malicious-site.com/steal" method="get" style="margin: 10px 0;">
             <button type="submit">Malicious Form (should be blocked)</button>
         </form>
     </div>
@@ -142,7 +142,7 @@
         <p>Test programmatic redirects using the safeRedirect method:</p>
         
         <button onclick="testSafeRedirect('https://example.com/dashboard')">Safe Redirect (example.com)</button>
-        <button onclick="testSafeRedirect('https://malicious-site.com/steal-data')">Malicious Redirect (should be blocked)</button>
+        <button onclick="testSafeRedirect('https://some-random-malicious-site.com/steal-data')">Malicious Redirect (should be blocked)</button>
         <button onclick="testSafeRedirect('https://trusted-site.org/profile')">Trusted Site Redirect</button>
     </div>
 
@@ -151,7 +151,7 @@
         <p><strong>Warning:</strong> These buttons will actually navigate if allowed. Use with caution!</p>
         
         <button onclick="directNavigate('https://example.com/dashboard')" style="background: #28a745;">Safe Direct Navigation</button>
-        <button onclick="directNavigate('https://malicious-site.com/steal-data')" style="background: #dc3545;">Malicious Direct Navigation</button>
+        <button onclick="directNavigate('https://some-random-malicious-site.com/steal-data')" style="background: #dc3545;">Malicious Direct Navigation</button>
     </div>
 
     <script>

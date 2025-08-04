@@ -16,9 +16,9 @@ describe('RedirectFirewall', () => {
     });
 
     it('should block non-whitelisted domains', () => {
-      const result = firewall.validateRedirect('https://malicious-site.com/steal-data');
+      const result = firewall.validateRedirect('https://some-random-malicious-site.com/steal-data');
       expect(result.allowed).toBe(false);
-      expect(result.reason).toContain('malicious-site.com not allowed');
+      expect(result.reason).toContain('some-random-malicious-site.com not allowed');
     });
 
     it('should handle invalid URLs', () => {
@@ -103,16 +103,16 @@ describe('RedirectFirewall', () => {
 
   describe('violation logging', () => {
     it('should log violations', () => {
-      firewall.validateRedirect('https://malicious-site.com');
+      firewall.validateRedirect('https://some-random-malicious-site.com');
       const violations = firewall.getViolations();
       
       expect(violations).toHaveLength(1);
-      expect(violations[0].originalUrl).toBe('https://malicious-site.com');
-      expect(violations[0].reason).toContain('malicious-site.com not in whitelist');
+      expect(violations[0].originalUrl).toBe('https://some-random-malicious-site.com');
+      expect(violations[0].reason).toContain('some-random-malicious-site.com not in whitelist');
     });
 
     it('should clear violations', () => {
-      firewall.validateRedirect('https://malicious-site.com');
+      firewall.validateRedirect('https://some-random-malicious-site.com');
       expect(firewall.getViolations()).toHaveLength(1);
       
       firewall.clearViolations();
