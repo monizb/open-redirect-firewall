@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Demo - Trust All + Full Page Interstitial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #495057;
+        }
+        .test-link:hover {
+            background: #dee2e6;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .full-page-interstitial {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .full-page-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+            text-align: center;
+        }
+        .warning-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
+        .url-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .popup-interstitial {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Demo - Trust All + Full Page Interstitial</h1>
+    
+    <div class="container">
+        <h2>Configuration</h2>
+        <p>Configure the browser protector behavior:</p>
+        
+        <div style="margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" id="interstitialEnabled" checked>
+                Show interstitial confirmation before redirects
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" id="trustAllDomains">
+                Trust all domains (show interstitial for everything)
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" id="fullPageInterstitial">
+                Use full page interstitial (instead of popup)
+            </label>
+        </div>
+        
+        <div id="status" class="status success">
+            ✅ Simple browser protection is enabled
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Test Links</h2>
+        <p>Click these links to test the redirect firewall. With "Trust All Domains" enabled, all links will show interstitial.</p>
+        
+        <h3>✅ Allowed Domains:</h3>
+        <a href="https://example.com/dashboard" class="test-link">https://example.com/dashboard</a>
+        <a href="https://trusted-site.org/profile" class="test-link">https://trusted-site.org/profile</a>
+        <a href="https://myapp.com/settings" class="test-link">https://myapp.com/settings</a>
+        
+        <h3>🚫 Blocked Domains (unless Trust All is enabled):</h3>
+        <a href="https://malicious-site.com/steal-data" class="test-link">https://malicious-site.com/steal-data</a>
+        <a href="https://phishing-site.com/fake-login" class="test-link">https://phishing-site.com/fake-login</a>
+        <a href="https://evil.com/hack" class="test-link">https://evil.com/hack</a>
+    </div>
+
+    <div class="container">
+        <h2>Programmatic Redirect Testing</h2>
+        <p>Test programmatic redirects:</p>
+        
+        <button class="btn btn-primary" onclick="testProgrammaticRedirect('https://example.com/dashboard')">
+            Safe Redirect (example.com)
+        </button>
+        
+        <button class="btn btn-secondary" onclick="testProgrammaticRedirect('https://malicious-site.com/steal-data')">
+            Malicious Redirect (test with Trust All)
+        </button>
+    </div>
+
+    <div class="container">
+        <h2>Manual URL Testing</h2>
+        <input type="text" id="testUrlInput" placeholder="Enter a URL to test" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button class="btn btn-primary" onclick="testUrl()">Test URL</button>
+    </div>
+
+    <script>
+        // Simple BrowserRedirectProtector implementation
+        class SimpleBrowserRedirectProtector {
+            constructor(firewallConfig, extensionConfig = {}) {
+                this.firewall = new SimpleRedirectFirewall(firewallConfig);
+                this.config = {
+                    enabled: true,
+                    showNotifications: true,
+                    logToConsole: true,
+                    showInterstitial: true,
+                    trustAllDomains: false,
+                    fullPageInterstitial: false,
+                    ...extensionConfig
+                };
+                this.isEnabled = true;
+                this.pendingRedirect = null;
+                this.onInterstitialCallback = null;
+                this.onFullPageInterstitialCallback = null;
+                this.init();
+            }
+
+            init() {
+                if (typeof window === 'undefined') return;
+                this.interceptLinkClicks();
+                this.interceptFormSubmissions();
+            }
+
+            safeRedirect(url) {
+                this.handleRedirect(url, () => {
+                    if (typeof window !== 'undefined') {
+                        window.location.href = url;
+                    }
+                });
+            }
+
+            handleRedirect(url, callback) {
+                const result = this.firewall.validateRedirect(url);
+                
+                // If trustAllDomains is enabled, treat all URLs as allowed but still show interstitial
+                if (result.allowed || this.config.trustAllDomains) {
+                    if (this.config.showInterstitial) {
+                        this.showInterstitial(url, callback);
+                    } else {
+                        callback();
+                    }
+                } else {
+                    this.handleViolation(url, result.reason || 'Unknown violation');
+                }
+            }
+
+            showInterstitial(url, callback) {
+                this.pendingRedirect = { url, callback };
+                
+                // Check if full page interstitial is enabled
+                if (this.config.fullPageInterstitial && this.onFullPageInterstitialCallback) {
+                    this.onFullPageInterstitialCallback(url);
+                } else if (this.onInterstitialCallback) {
+                    this.onInterstitialCallback(url);
+                }
+            }
+
+            confirmRedirect() {
+                if (this.pendingRedirect) {
+                    this.pendingRedirect.callback();
+                    this.pendingRedirect = null;
+                }
+            }
+
+            cancelRedirect() {
+                this.pendingRedirect = null;
+            }
+
+            interceptLinkClicks() {
+                document.addEventListener('click', (event) => {
+                    const link = event.target.closest('a');
+                    if (!link || !this.isEnabled) return;
+
+                    const href = link.getAttribute('href');
+                    if (!href) return;
+
+                    const result = this.firewall.validateRedirect(href);
+                    if (!result.allowed && !this.config.trustAllDomains) {
+                        event.preventDefault();
+                        this.handleViolation(href, result.reason || 'Link redirect blocked');
+                    } else if (this.config.showInterstitial) {
+                        event.preventDefault();
+                        this.showInterstitial(href, () => {
+                            window.location.href = href;
+                        });
+                    }
+                }, true);
+            }
+
+            interceptFormSubmissions() {
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+                    if (!form || !this.isEnabled) return;
+
+                    const action = form.getAttribute('action');
+                    if (!action) return;
+
+                    const result = this.firewall.validateRedirect(action);
+                    if (!result.allowed && !this.config.trustAllDomains) {
+                        event.preventDefault();
+                        this.handleViolation(action, result.reason || 'Form redirect blocked');
+                    } else if (this.config.showInterstitial) {
+                        event.preventDefault();
+                        this.showInterstitial(action, () => {
+                            form.submit();
+                        });
+                    }
+                }, true);
+            }
+
+            handleViolation(url, reason) {
+                if (this.config.logToConsole) {
+                    console.warn(`[Open Redirect Firewall] Blocked: ${reason} - URL: ${url}`);
+                }
+
+                if (this.config.showNotifications) {
+                    this.showNotification(`Redirect blocked: ${reason}`);
+                }
+            }
+
+            showNotification(message) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Open Redirect Firewall', { body: message });
+                }
+            }
+
+            enable() {
+                this.isEnabled = true;
+            }
+
+            disable() {
+                this.isEnabled = false;
+            }
+
+            updateConfig(newConfig) {
+                this.firewall.updateConfig(newConfig);
+            }
+
+            updateExtensionConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+            }
+
+            validateUrl(url) {
+                return this.firewall.validateRedirect(url);
+            }
+
+            getViolations() {
+                return this.firewall.getViolations();
+            }
+
+            setInterstitialCallback(callback) {
+                this.onInterstitialCallback = callback;
+            }
+
+            setFullPageInterstitialCallback(callback) {
+                this.onFullPageInterstitialCallback = callback;
+            }
+        }
+
+        // Simple RedirectFirewall implementation
+        class SimpleRedirectFirewall {
+            constructor(config) {
+                this.config = {
+                    allowedSubdomains: false,
+                    allowLocalhost: false,
+                    allowRelativeUrls: true,
+                    strictMode: false,
+                    logViolations: true,
+                    ...config
+                };
+                this.violations = [];
+            }
+
+            validateRedirect(url) {
+                if (!url || typeof url !== 'string') {
+                    return this.createResult(false, 'Invalid URL provided');
+                }
+
+                try {
+                    const parsedUrl = new URL(url);
+                    
+                    if (this.isRelativeUrl(parsedUrl)) {
+                        return this.config.allowRelativeUrls 
+                            ? this.createResult(true)
+                            : this.createResult(false, 'Relative URLs not allowed');
+                    }
+
+                    if (this.isLocalhost(parsedUrl)) {
+                        return this.config.allowLocalhost 
+                            ? this.createResult(true)
+                            : this.createResult(false, 'Localhost not allowed');
+                    }
+
+                    const domain = parsedUrl.hostname;
+                    if (!domain) {
+                        return this.createResult(false, 'No domain found in URL');
+                    }
+
+                    const isAllowed = this.isDomainAllowed(domain);
+                    if (!isAllowed) {
+                        this.logViolation(url, `Domain ${domain} not in whitelist`);
+                        return this.createResult(false, `Domain ${domain} not allowed`);
+                    }
+
+                    return this.createResult(true, undefined, this.sanitizeUrl(url));
+                } catch (error) {
+                    return this.createResult(false, 'Invalid URL format');
+                }
+            }
+
+            isRelativeUrl(parsedUrl) {
+                return !parsedUrl.protocol || parsedUrl.protocol === '';
+            }
+
+            isLocalhost(parsedUrl) {
+                const hostname = parsedUrl.hostname.toLowerCase();
+                return hostname === 'localhost' || 
+                       hostname === '127.0.0.1' || 
+                       hostname.startsWith('192.168.') ||
+                       hostname.startsWith('10.') ||
+                       hostname.startsWith('172.');
+            }
+
+            isDomainAllowed(domain) {
+                const normalizedDomain = domain.toLowerCase();
+                
+                for (const allowedDomain of this.config.allowedDomains) {
+                    const normalizedAllowed = allowedDomain.toLowerCase();
+                    
+                    if (normalizedDomain === normalizedAllowed) {
+                        return true;
+                    }
+                    
+                    if (this.config.allowedSubdomains && normalizedDomain.endsWith('.' + normalizedAllowed)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+
+            sanitizeUrl(url) {
+                if (this.config.strictMode) {
+                    const parsed = new URL(url);
+                    return `${parsed.protocol}//${parsed.hostname}${parsed.pathname}${parsed.search}`;
+                }
+                return url;
+            }
+
+            createResult(allowed, reason, sanitizedUrl) {
+                return {
+                    allowed,
+                    reason,
+                    sanitizedUrl: sanitizedUrl || (allowed ? undefined : undefined)
+                };
+            }
+
+            logViolation(originalUrl, reason) {
+                if (!this.config.logViolations) return;
+
+                const violation = {
+                    timestamp: new Date(),
+                    originalUrl,
+                    reason
+                };
+
+                this.violations.push(violation);
+                
+                if (this.config.logViolations) {
+                    console.warn(`[Open Redirect Firewall] Violation: ${reason} - URL: ${originalUrl}`);
+                }
+            }
+
+            getViolations() {
+                return [...this.violations];
+            }
+
+            clearViolations() {
+                this.violations = [];
+            }
+
+            updateConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+            }
+
+            getAllowedDomains() {
+                return [...this.config.allowedDomains];
+            }
+        }
+
+        // Global variables
+        let protector = null;
+        let currentPendingUrl = '';
+
+        // Initialize the protector
+        function initProtector() {
+            const interstitialEnabled = document.getElementById('interstitialEnabled').checked;
+            const trustAllDomains = document.getElementById('trustAllDomains').checked;
+            const fullPageInterstitial = document.getElementById('fullPageInterstitial').checked;
+
+            protector = new SimpleBrowserRedirectProtector({
+                allowedDomains: ['example.com', 'trusted-site.org', 'myapp.com'],
+                allowedSubdomains: true,
+                allowLocalhost: true,
+                logViolations: true
+            }, {
+                enabled: true,
+                showNotifications: true,
+                logToConsole: true,
+                showInterstitial: interstitialEnabled,
+                trustAllDomains: trustAllDomains,
+                fullPageInterstitial: fullPageInterstitial
+            });
+
+            // Set up interstitial callbacks
+            protector.setInterstitialCallback((url) => {
+                currentPendingUrl = url;
+                showPopupInterstitial();
+            });
+
+            protector.setFullPageInterstitialCallback((url) => {
+                currentPendingUrl = url;
+                showFullPageInterstitial();
+            });
+
+            // Request notification permission
+            if ('Notification' in window) {
+                Notification.requestPermission();
+            }
+        }
+
+        // Show popup interstitial
+        function showPopupInterstitial() {
+            const interstitial = document.createElement('div');
+            interstitial.className = 'popup-interstitial';
+            interstitial.innerHTML = `
+                <div class="popup-content">
+                    <h2>⚠️ Confirm Redirect</h2>
+                    <p>You are about to leave this site and navigate to:</p>
+                    <p><strong>${currentPendingUrl}</strong></p>
+                    <p>Are you sure you want to continue?</p>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="confirmRedirect()" style="margin: 0 10px;">
+                            Continue to Site
+                        </button>
+                        <button class="btn btn-secondary" onclick="cancelRedirect()" style="margin: 0 10px;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(interstitial);
+        }
+
+        // Show full page interstitial
+        function showFullPageInterstitial() {
+            const interstitial = document.createElement('div');
+            interstitial.className = 'full-page-interstitial';
+            interstitial.innerHTML = `
+                <div class="full-page-content">
+                    <h1>⚠️ Security Check Required</h1>
+                    
+                    <div class="warning-banner">
+                        <strong>Important:</strong> You are about to leave this secure site and navigate to an external website.
+                    </div>
+                    
+                    <p>For your security, please confirm that you want to visit:</p>
+                    
+                    <div class="url-display">
+                        ${currentPendingUrl}
+                    </div>
+                    
+                    <p>This external site is not controlled by us and may have different security policies.</p>
+                    
+                    <div style="margin-top: 30px;">
+                        <button class="btn btn-success" onclick="confirmRedirect()" style="margin: 0 10px;">
+                            ✅ Continue to External Site
+                        </button>
+                        <button class="btn btn-secondary" onclick="cancelRedirect()" style="margin: 0 10px;">
+                            ❌ Stay on This Site
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                        <p>If you're unsure, it's safer to stay on this site.</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(interstitial);
+        }
+
+        // Confirm redirect
+        function confirmRedirect() {
+            if (protector) {
+                protector.confirmRedirect();
+            }
+            hideInterstitials();
+        }
+
+        // Cancel redirect
+        function cancelRedirect() {
+            if (protector) {
+                protector.cancelRedirect();
+            }
+            hideInterstitials();
+        }
+
+        // Hide all interstitials
+        function hideInterstitials() {
+            const interstitials = document.querySelectorAll('.popup-interstitial, .full-page-interstitial');
+            interstitials.forEach(interstitial => interstitial.remove());
+            currentPendingUrl = '';
+        }
+
+        // Test URL
+        function testUrl() {
+            const url = document.getElementById('testUrlInput').value;
+            if (!url) return;
+
+            if (protector) {
+                const result = protector.validateUrl(url);
+                const trustAllDomains = document.getElementById('trustAllDomains').checked;
+                
+                if (result.allowed || trustAllDomains) {
+                    updateStatus(`✅ URL is allowed: ${url}`, 'success');
+                } else {
+                    updateStatus(`❌ URL is blocked: ${result.reason}`, 'error');
+                }
+            }
+        }
+
+        // Test programmatic redirect
+        function testProgrammaticRedirect(url) {
+            updateStatus(`🔄 Attempting programmatic redirect to: ${url}`, 'info');
+            setTimeout(() => {
+                if (protector) {
+                    protector.safeRedirect(url);
+                } else {
+                    window.location.href = url;
+                }
+            }, 1000);
+        }
+
+        // Update status
+        function updateStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // Event listeners for configuration changes
+        document.getElementById('interstitialEnabled').addEventListener('change', initProtector);
+        document.getElementById('trustAllDomains').addEventListener('change', initProtector);
+        document.getElementById('fullPageInterstitial').addEventListener('change', initProtector);
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initProtector);
+    </script>
+</body>
+</html> 

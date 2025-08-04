@@ -30,6 +30,30 @@ Open redirect vulnerabilities occur when applications redirect users to arbitrar
 npm install open-redirect-firewall
 ```
 
+### 🔌 Simple Plug-and-Play (Auto-Protection)
+
+**Just add this one line to your app and all redirects are automatically protected:**
+
+```javascript
+// Add this anywhere in your app (index.js, main.js, etc.)
+import { createBrowserProtector } from 'open-redirect-firewall';
+
+// This automatically protects ALL redirects in your app
+createBrowserProtector({
+  allowedDomains: ['example.com', 'trusted-site.org', 'myapp.com']
+});
+```
+
+**That's it!** Now all redirects are automatically protected:
+- ✅ Link clicks are validated
+- ✅ Form submissions are checked  
+- ✅ Programmatic redirects are intercepted
+- ✅ History API calls are validated
+- ❌ Malicious redirects are blocked
+- 📊 Violations are logged
+
+**No code changes needed anywhere else in your app!**
+
 ### Basic Usage
 
 ```typescript
@@ -160,6 +184,9 @@ interface BrowserExtensionConfig {
   logToConsole: boolean;           // Log to console
   showInterstitial?: boolean;      // Show confirmation before redirects
   onInterstitial?: (url, callback) => void; // Custom interstitial handler
+  trustAllDomains?: boolean;       // Trust all domains but still show interstitial
+  fullPageInterstitial?: boolean;  // Show full page instead of popup
+  onFullPageInterstitial?: (url, callback) => void; // Custom full page handler
 }
 ```
 
@@ -196,6 +223,48 @@ const protector = createBrowserProtector({
       callback(); // Proceed with redirect
     }
     // If user cancels, callback is not called and redirect is blocked
+  }
+});
+```
+
+### Trust All Domains + Interstitial
+
+```typescript
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com'] // Still needed for validation logic
+}, {
+  trustAllDomains: true,           // Trust all domains but show interstitial
+  showInterstitial: true,
+  onInterstitial: (url, callback) => {
+    // Show confirmation for ALL redirects, even trusted ones
+    if (confirm(`Confirm redirect to ${url}?`)) {
+      callback();
+    }
+  }
+});
+```
+
+### Full Page Interstitial
+
+```typescript
+const protector = createBrowserProtector({
+  allowedDomains: ['example.com']
+}, {
+  showInterstitial: true,
+  fullPageInterstitial: true,      // Use full page instead of popup
+  onFullPageInterstitial: (url, callback) => {
+    // Render a full page confirmation
+    document.body.innerHTML = `
+      <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                  background: #f8f9fa; display: flex; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+          <h2>⚠️ Confirm Redirect</h2>
+          <p>You are about to visit: <strong>${url}</strong></p>
+          <button onclick="window.location.href='${url}'">Continue</button>
+          <button onclick="history.back()">Cancel</button>
+        </div>
+      </div>
+    `;
   }
 });
 ```

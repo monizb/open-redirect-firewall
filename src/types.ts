@@ -33,4 +33,7 @@ export interface BrowserExtensionConfig {
   logToConsole: boolean;
   showInterstitial?: boolean;
   onInterstitial?: (url: string, callback: () => void) => void;
+  trustAllDomains?: boolean; // Trust all domains but still show interstitial
+  fullPageInterstitial?: boolean; // Show full page instead of popup
+  onFullPageInterstitial?: (url: string, callback: () => void) => void;
 } 

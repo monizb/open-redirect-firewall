@@ -24,13 +24,17 @@ export class BrowserRedirectProtector {
   // Safe redirect method since we can't intercept window.location in modern browsers
   public safeRedirect(url: string): void {
     this.handleRedirect(url, () => {
-      window.location.href = url;
+      if (typeof window !== 'undefined') {
+        window.location.href = url;
+      }
     });
   }
 
   private handleRedirect(url: string, callback: () => void): void {
     const result = this.firewall.validateRedirect(url);
-    if (result.allowed) {
+    
+    // If trustAllDomains is enabled, treat all URLs as allowed but still show interstitial
+    if (result.allowed || this.config.trustAllDomains) {
       if (this.config.showInterstitial) {
         this.showInterstitial(url, callback);
       } else {
@@ -43,7 +47,11 @@ export class BrowserRedirectProtector {
 
   private showInterstitial(url: string, callback: () => void): void {
     this.pendingRedirect = { url, callback };
-    if (this.config.onInterstitial) {
+    
+    // Check if full page interstitial is enabled
+    if (this.config.fullPageInterstitial && this.config.onFullPageInterstitial) {
+      this.config.onFullPageInterstitial(url, callback);
+    } else if (this.config.onInterstitial) {
       this.config.onInterstitial(url, callback);
     }
   }
@@ -70,7 +78,7 @@ export class BrowserRedirectProtector {
       if (!href) return;
 
       const result = this.firewall.validateRedirect(href);
-      if (!result.allowed) {
+      if (!result.allowed && !this.config.trustAllDomains) {
         event.preventDefault();
         this.handleViolation(href, result.reason || 'Link redirect blocked');
       } else if (this.config.showInterstitial) {
@@ -91,7 +99,7 @@ export class BrowserRedirectProtector {
       if (!action) return;
 
       const result = this.firewall.validateRedirect(action);
-      if (!result.allowed) {
+      if (!result.allowed && !this.config.trustAllDomains) {
         event.preventDefault();
         this.handleViolation(action, result.reason || 'Form redirect blocked');
       } else if (this.config.showInterstitial) {
