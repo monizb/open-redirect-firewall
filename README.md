@@ -2,6 +2,9 @@
 
 A comprehensive security package that prevents open redirect vulnerabilities by whitelisting allowed domains. Install once and stop worrying about redirect-based attacks.
 
+<img width="1432" height="689" alt="image" src="https://github.com/user-attachments/assets/0c919afd-c710-422c-b76a-0108ab2de690" />
+
+
 ## 🛡️ What it does
 
 Open redirect vulnerabilities occur when applications redirect users to arbitrary URLs without proper validation. This package provides:
