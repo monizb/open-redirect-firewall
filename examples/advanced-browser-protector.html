@@ -157,7 +157,7 @@
                 });
             }
 
-            private handleRedirect(url, callback) {
+            handleRedirect(url, callback) {
                 const result = this.firewall.validateRedirect(url);
                 
                 // If trustAllDomains is enabled, treat all URLs as allowed but still show interstitial
@@ -172,7 +172,7 @@
                 }
             }
 
-            private showInterstitial(url, callback) {
+            showInterstitial(url, callback) {
                 this.pendingRedirect = { url, callback };
                 
                 // Check if full page interstitial is enabled
@@ -194,7 +194,7 @@
                 this.pendingRedirect = null;
             }
 
-            private interceptLinkClicks() {
+            interceptLinkClicks() {
                 document.addEventListener('click', (event) => {
                     const link = event.target.closest('a');
                     if (!link || !this.isEnabled) return;
@@ -215,7 +215,7 @@
                 }, true);
             }
 
-            private interceptFormSubmissions() {
+            interceptFormSubmissions() {
                 document.addEventListener('submit', (event) => {
                     const form = event.target;
                     if (!form || !this.isEnabled) return;
@@ -236,7 +236,7 @@
                 }, true);
             }
 
-            private interceptHistoryAPI() {
+            interceptHistoryAPI() {
                 const originalPushState = history.pushState;
                 const originalReplaceState = history.replaceState;
 
@@ -263,7 +263,7 @@
                 };
             }
 
-            private handleViolation(url, reason) {
+            handleViolation(url, reason) {
                 if (this.config.logToConsole) {
                     console.warn(`[Open Redirect Firewall] Blocked: ${reason} - URL: ${url}`);
                 }
@@ -273,7 +273,7 @@
                 }
             }
 
-            private showNotification(message) {
+            showNotification(message) {
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('Open Redirect Firewall', { body: message });
                 }
